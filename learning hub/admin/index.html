@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrightMinds Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #ff9f1c;
+            --accent: #2ec4b6;
+            --light: #fdfffc;
+            --dark: #011627;
+            --success: #2ecc71;
+            --warning: #e74c3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem 1rem;
+        }
+        
+        .admin-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .admin-logo i {
+            font-size: 2rem;
+            color: var(--secondary);
+        }
+        
+        .admin-nav ul {
+            list-style: none;
+        }
+        
+        .admin-nav li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .admin-nav a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 0.8rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .admin-nav a:hover, .admin-nav a.active {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .admin-nav i {
+            width: 25px;
+        }
+        
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            padding: 2rem;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        /* Table Styles */
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .students-table th, .students-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .students-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .students-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            transition: all 0.3s;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .view-btn {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .edit-btn {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .quiz-btn {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        /* Progress Bars */
+        .progress-container {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            border-radius: 5px;
+        }
+        
+        /* Quiz Results Styles */
+        .quiz-results-container {
+            margin-top: 2rem;
+        }
+        
+        .option-row input[type="text"] {
+            flex: 1;
+            min-width: 500px;
+            padding: 0.85rem;
+            font-size: 1.05rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+        }
+
+        .subject-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+        
+        .subject-tab {
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .subject-tab.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .quiz-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .quiz-results-table th, .quiz-results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .quiz-results-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .quiz-results-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        .quiz-content {
+            margin-top: 1rem;
+        }
+        
+        .quiz-question {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quiz-options {
+            margin-left: 1rem;
+        }
+        
+        .correct-answer {
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        /* Add Quiz Button */
+        .add-quiz-btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        /* Quiz Creation Form */
+        .quiz-form {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .question-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: white;
+        }
+        
+        .option-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-row input[type="text"] {
+            flex: 1;
+            margin-right: 0.5rem;
+        }
+        
+        .option-row input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-danger {
+            background-color: var(--warning);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .admin-nav ul {
+                display: flex;
+                overflow-x: auto;
+                gap: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+            
+            .admin-nav li {
+                margin-bottom: 0;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .students-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .subject-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            
+            .option-row input[type="text"] {
+                min-width: 100%;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="admin-logo">
+            <i class="fas fa-brain"></i>
+            <h2>BrightMinds Admin</h2>
+        </div>
+        
+        <nav class="admin-nav">
+            <ul>
+                <li><a href="#" class="active" data-tab="students"><i class="fas fa-users"></i> Students</a></li>
+                <li><a href="#" data-tab="quiz-results"><i class="fas fa-chart-bar"></i> Quiz Results</a></li>
+                <li><a href="#" data-tab="quizzes"><i class="fas fa-eye"></i> View Quizzes</a></li>
+                <li><a href="#" data-tab="add-quiz"><i class="fas fa-plus-circle"></i> Add Quiz</a></li>
+                <li><a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
+    </div>
+    
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <div id="admin-welcome">Welcome, Admin!</div>
+        </div>
+        
+        <!-- Students Management -->
+        <div class="admin-content" id="students-content">
+            <h2>Student Management</h2>
+            <p>View and manage all registered students.</p>
+            
+            <div class="students-list">
+                <table class="students-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Email</th>
+                            <th>Joined</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body">
+                        <!-- Students will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Quiz Results -->
+        <div class="admin-content" id="quiz-results-content" style="display: none;">
+            <h2>Quiz Results</h2>
+            <p>View quiz results for all subjects.</p>
+            
+            <div class="subject-tabs">
+                <div class="subject-tab active" data-subject="reading">Reading</div>
+                <div class="subject-tab" data-subject="math">Math</div>
+                <div class="subject-tab" data-subject="amharic">Amharic</div>
+                <div class="subject-tab" data-subject="knowledge">General Knowledge</div>
+            </div>
+            
+            <div class="quiz-results-container">
+                <table class="quiz-results-table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Quiz Title</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quiz-results-body">
+                        <!-- Quiz results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- View Quizzes -->
+        <div class="admin-content" id="quizzes-content" style="display: none;">
+            <h2>View Quizzes</h2>
+            <p>View all available quizzes.</p>
+            
+            <div class="subject-tabs">
+                <div class="subject-tab active" data-quiz-subject="reading">Reading</div>
+                <div class="subject-tab" data-quiz-subject="math">Math</div>
+                <div class="subject-tab" data-quiz-subject="amharic">Amharic</div>
+                <div class="subject-tab" data-quiz-subject="knowledge">General Knowledge</div>
+            </div>
+            
+            <div class="quiz-results-container">
+                <table class="quiz-results-table">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Subject</th>
+                            <th>Questions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quizzes-body">
+                        <!-- Quizzes will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Add Quiz -->
+      <!-- Add Quiz -->
+<div class="admin-content" id="add-quiz-content" style="display: none;">
+    <h2>Add New Quiz</h2>
+    <p>Create a new quiz for students.</p>
+    
+    <button class="add-quiz-btn" id="create-quiz-btn">
+        <i class="fas fa-plus"></i> Create New Quiz
+    </button>
+    
+    <div class="quiz-form" id="quiz-form">
+        <div class="form-group">
+            <label for="quiz-subject">Subject</label>
+            <select id="quiz-subject" required>
+                <option value="">Select Subject</option>
+                <option value="reading">Reading</option>
+                <option value="math">Math</option>
+                <option value="amharic">Amharic</option>
+                <option value="knowledge">General Knowledge</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="quiz-title">Quiz Title</label>
+            <select id="quiz-title" required>
+                <option value="">First select a subject</option>
+            </select>
+        </div>
+        
+        <div id="questions-container">
+            <!-- Questions will be added here -->
+        </div>
+        
+        <button type="button" class="btn-secondary" id="add-question-btn">
+            <i class="fas fa-plus"></i> Add Question
+        </button>
+        
+        <div style="margin-top: 2rem;">
+            <button type="button" class="btn-primary" id="save-quiz-btn">Save Quiz</button>
+            <button type="button" class="btn-secondary" id="cancel-quiz-btn">Cancel</button>
+        </div>
+    </div>
+    
+    <p id="no-quiz-message" style="margin-top: 2rem; font-style: italic; color: #666;">
+        Click "Create New Quiz" to start creating a quiz.
+    </p>
+</div>
+
+    <!-- Quiz View Modal -->
+    <div class="modal" id="quiz-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-quiz-title">Quiz Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="quiz-details">
+                <!-- Quiz details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Detail Modal -->
+    <div class="modal" id="student-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Student Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="student-details">
+                <!-- Student details will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Student Modal -->
+    <div class="modal" id="edit-student-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Student</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="edit-student-form">
+                <input type="hidden" id="edit-student-id">
+                <div class="form-group">
+                    <label for="edit-student-name">Student Name</label>
+                    <input type="text" id="edit-student-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-student-age">Age</label>
+                    <input type="number" id="edit-student-age" min="5" max="12" required>
+                </div>
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdBKJRf3txDt8LQLgKvL9UNUWV7iHw6Bk",
+            authDomain: "brightminds-learninghub.firebaseapp.com",
+            projectId: "brightminds-learninghub",
+            storageBucket: "brightminds-learninghub.appspot.com",
+            messagingSenderId: "598495988704",
+            appId: "1:598495988704:web:5775a73d65e7380fafb985",
+            measurementId: "G-2Z74X8ZVVJ"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // Global variables
+        let currentUser = null;
+        let currentSubject = 'reading';
+        let currentQuizSubject = 'reading';
+        let questionCount = 0;
+        // Quiz title options based on subject
+const quizTitleOptions = {
+    reading: ["Reading"],
+    math: ["Addition", "Subtraction", "Multiplication", "Division"],
+    amharic: ["Amharic"],
+    knowledge: ["General Knowledge"]
+};
+
+// Update quiz title options based on selected subject
+function updateQuizTitleOptions() {
+    const subjectSelect = document.getElementById('quiz-subject');
+    const titleSelect = document.getElementById('quiz-title');
+    const subject = subjectSelect.value;
+    
+    // Clear existing options
+    titleSelect.innerHTML = '';
+    
+    if (subject && quizTitleOptions[subject]) {
+        // Add options based on selected subject
+        quizTitleOptions[subject].forEach(title => {
+            const option = document.createElement('option');
+            option.value = title.toLowerCase();
+            option.textContent = title;
+            titleSelect.appendChild(option);
+        });
+    } else {
+        // Add default option if no subject is selected
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'First select a subject';
+        titleSelect.appendChild(option);
+    }
+}
+        
+        // DOM Elements
+        const navLinks = document.querySelectorAll('.admin-nav a');
+        const contentSections = document.querySelectorAll('.admin-content');
+        const studentsTableBody = document.getElementById('students-table-body');
+        const quizResultsBody = document.getElementById('quiz-results-body');
+        const quizzesBody = document.getElementById('quizzes-body');
+        const subjectTabs = document.querySelectorAll('.subject-tab');
+        const logoutBtn = document.getElementById('logout');
+        const quizModal = document.getElementById('quiz-modal');
+        const studentModal = document.getElementById('student-modal');
+        const editStudentModal = document.getElementById('edit-student-modal');
+        const createQuizBtn = document.getElementById('create-quiz-btn');
+        const quizForm = document.getElementById('quiz-form');
+        const questionsContainer = document.getElementById('questions-container');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const saveQuizBtn = document.getElementById('save-quiz-btn');
+        const cancelQuizBtn = document.getElementById('cancel-quiz-btn');
+        const noQuizMessage = document.getElementById('no-quiz-message');
+        const editStudentForm = document.getElementById('edit-student-form');
+        
+        // Check authentication state
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                currentUser = user;
+                document.getElementById('admin-welcome').textContent = `Welcome, ${user.email}`;
+                
+                // Verify user is an admin
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            if (userData.role !== 'admin') {
+                                alert('Access denied. Admin privileges required.');
+                                auth.signOut();
+                                window.location.href = '../index.html';
+                            } else {
+                                loadStudents();
+                                loadQuizResults('reading');
+                                loadQuizzes('reading');
+                            }
+                        } else {
+                            alert('User data not found');
+                            auth.signOut();
+                            window.location.href = '../index.html';
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error verifying admin status:', error);
+                        alert('Error verifying admin status');
+                        auth.signOut();
+                        window.location.href = '../index.html';
+                    });
+            } else {
+                window.location.href = "../index.html";
+            }
+        });
+        
+        // Navigation
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (this.id === 'logout') {
+                    auth.signOut();
+                    return;
+                }
+                
+                // Update active link
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding content
+                const tab = this.getAttribute('data-tab');
+                contentSections.forEach(section => {
+                    section.style.display = 'none';
+                });
+                document.getElementById(`${tab}-content`).style.display = 'block';
+            });
+        });
+        
+        // Subject tabs for quiz results
+        const resultsTabs = document.querySelectorAll('#quiz-results-content .subject-tab');
+        resultsTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                resultsTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentSubject = this.getAttribute('data-subject');
+                loadQuizResults(currentSubject);
+            });
+        });
+        
+        // Subject tabs for quizzes
+        const quizTabs = document.querySelectorAll('#quizzes-content .subject-tab');
+        quizTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                quizTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentQuizSubject = this.getAttribute('data-quiz-subject');
+                loadQuizzes(currentQuizSubject);
+            });
+        });
+        
+        // Close modals
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+        });
+        
+        // Subject change event for quiz form
+document.getElementById('quiz-subject').addEventListener('change', updateQuizTitleOptions);
+        // Create Quiz Button
+        createQuizBtn.addEventListener('click', function() {
+            quizForm.style.display = 'block';
+            noQuizMessage.style.display = 'none';
+            createQuizBtn.style.display = 'none';
+            addQuestion(); // Add first question
+        });
+        
+        // Cancel Quiz Creation
+        cancelQuizBtn.addEventListener('click', function() {
+            resetQuizForm();
+        });
+        
+        // Add Question Button
+        addQuestionBtn.addEventListener('click', function() {
+            addQuestion();
+        });
+        
+        // Save Quiz Button
+        saveQuizBtn.addEventListener('click', function() {
+            saveQuiz();
+        });
+        
+        // Handle edit student form submission
+        editStudentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveStudentChanges();
+        });
+        
+        // Add a new question to the form
+        function addQuestion() {
+            questionCount++;
+            const questionId = `question-${questionCount}`;
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-container';
+            questionDiv.id = questionId;
+            
+            questionDiv.innerHTML = `
+                <div class="form-group">
+                    <label>Question ${questionCount}</label>
+                    <textarea class="question-text" placeholder="Enter question text" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Options</label>
+                    <div class="option-row">
+                        <input type="text" placeholder="Option A" required>
+                        <input type="radio" name="correct-${questionCount}" value="a" required> Correct
+                    </div>
+                    <div class="option-row">
+                        <input type="text" placeholder="Option B" required>
+                        <input type="radio" name="correct-${questionCount}" value="b"> Correct
+                    </div>
+                    <div class="option-row">
+                        <input type="text" placeholder="Option C">
+                        <input type="radio" name="correct-${questionCount}" value="c"> Correct
+                    </div>
+                    <div class="option-row">
+                        <input type="text" placeholder="Option D">
+                        <input type="radio" name="correct-${questionCount}" value="d"> Correct
+                    </div>
+                </div>
+                
+                <button type="button" class="btn-danger remove-question" data-question="${questionId}">
+                    <i class="fas fa-trash"></i> Remove Question
+                </button>
+            `;
+            
+            questionsContainer.appendChild(questionDiv);
+            
+            // Add event listener to remove button
+            questionDiv.querySelector('.remove-question').addEventListener('click', function() {
+                if (document.querySelectorAll('.question-container').length > 1) {
+                    questionDiv.remove();
+                } else {
+                    alert('A quiz must have at least one question.');
+                }
+            });
+        }
+        
+        // Reset the quiz form
+        function resetQuizForm() {
+            questionsContainer.innerHTML = '';
+            document.getElementById('quiz-title').value = '';
+            document.getElementById('quiz-subject').value = '';
+            quizForm.style.display = 'none';
+            noQuizMessage.style.display = 'block';
+            createQuizBtn.style.display = 'flex';
+            questionCount = 0;
+        }
+        
+        // Save the quiz to Firestore
+        function saveQuiz() {
+            const title = document.getElementById('quiz-title').value.trim();
+            const subject = document.getElementById('quiz-subject').value;
+
+            if (!title) {
+                alert('Please enter a quiz title');
+                return;
+            }
+
+            if (!subject) {
+                alert('Please select a subject');
+                return;
+            }
+
+            const questionElements = document.querySelectorAll('.question-container');
+            if (questionElements.length === 0) {
+                alert('Please add at least one question');
+                return;
+            }
+
+            const newQuestions = [];
+            let isValid = true;
+
+            questionElements.forEach((questionEl, index) => {
+                const questionText = questionEl.querySelector('.question-text').value.trim();
+                const optionInputs = questionEl.querySelectorAll('.option-row input[type="text"]');
+                const correctAnswerRadio = questionEl.querySelector('input[type="radio"]:checked');
+
+                if (!questionText) {
+                    alert(`Please enter text for question ${index + 1}`);
+                    isValid = false;
+                    return;
+                }
+
+                if (!correctAnswerRadio) {
+                    alert(`Please select a correct answer for question ${index + 1}`);
+                    isValid = false;
+                    return;
+                }
+
+                const options = {};
+                let optionCount = 0;
+
+                optionInputs.forEach((input, i) => {
+                    const optionValue = input.value.trim();
+                    if (optionValue) {
+                        const optionKey = String.fromCharCode(97 + i);
+                        options[optionKey] = optionValue;
+                        optionCount++;
+                    }
+                });
+
+                if (optionCount < 2) {
+                    alert(`Question ${index + 1} must have at least 2 options`);
+                    isValid = false;
+                    return;
+                }
+
+                newQuestions.push({
+                    text: questionText,
+                    options: options,
+                    correctAnswer: correctAnswerRadio.value
+                });
+            });
+
+            if (!isValid) return;
+
+            // Find the quiz document for the subject
+            db.collection('quizzes')
+            .where('subject', '==', subject)
+            .limit(1)
+            .get()
+            .then(snapshot => {
+                if (!snapshot.empty) {
+                    // Quiz exists → update its questions array
+                    const quizDocRef = snapshot.docs[0].ref;
+                    return quizDocRef.update({
+                        questions: firebase.firestore.FieldValue.arrayUnion(...newQuestions)
+                    });
+                } else {
+                    // Quiz does not exist → create new
+                    return db.collection('quizzes').add({
+                        title: title,
+                        subject: subject,
+                        questions: newQuestions,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        createdBy: currentUser.uid
+                    });
+                }
+            })
+            .then(() => {
+                alert('Questions saved successfully!');
+                resetQuizForm();
+                if (document.getElementById('quizzes-content').style.display !== 'none') {
+                    loadQuizzes(currentQuizSubject);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving quiz: ', error);
+                alert('Error saving quiz: ' + error.message);
+            });
+        }
+        
+        // Load students from Firestore
+        function loadStudents() {
+            studentsTableBody.innerHTML = '<tr><td colspan="6">Loading students...</td></tr>';
+            
+            db.collection('users')
+                .where('role', '==', 'child')
+                .get()
+                .then(querySnapshot => {
+                    studentsTableBody.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        studentsTableBody.innerHTML = '<tr><td colspan="6">No students found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const student = doc.data();
+                        const tr = document.createElement('tr');
+                        
+                        // Format the date
+                        const joinedDate = student.createdAt ? 
+                            new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+                        
+                        // Get student name
+                        const studentName = student.firstName && student.lastName ? 
+                            `${student.firstName} ${student.lastName}` : student.firstName || student.lastName || 'N/A';
+                        
+                        tr.innerHTML = `
+                            <td>${studentName}</td>
+                            <td>${student.age || 'N/A'}</td>
+                            <td>${student.email || 'N/A'}</td>
+                            <td>${joinedDate}</td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: ${student.readingProgress || 0}%"></div>
+                                </div>
+                                ${student.readingProgress || 0}%
+                            </td>
+                            <td>
+                                <button class="action-btn view-btn" data-id="${doc.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn edit-btn" data-id="${doc.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete-btn" data-id="${doc.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        
+                        studentsTableBody.appendChild(tr);
+                    });
+                    
+                    // Add event listeners to action buttons
+                    document.querySelectorAll('.view-btn').forEach(btn => {
+                        btn.addEventListener('click', () => viewStudent(btn.getAttribute('data-id')));
+                    });
+                    
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.addEventListener('click', () => editStudent(btn.getAttribute('data-id')));
+                    });
+                    
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', () => deleteStudent(btn.getAttribute('data-id')));
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading students: ', error);
+                    studentsTableBody.innerHTML = '<tr><td colspan="6">Error loading students</td></tr>';
+                });
+        }
+        
+        // View student details
+        function viewStudent(studentId) {
+            db.collection('users').doc(studentId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const student = doc.data();
+                        const joinedDate = student.createdAt ? 
+                            new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+                        
+                        // Get student name
+                        const studentName = student.firstName && student.lastName ? 
+                            `${student.firstName} ${student.lastName}` : student.firstName || student.lastName || 'N/A';
+                        
+                        document.getElementById('student-details').innerHTML = `
+                            <h4>${studentName}</h4>
+                            <p><strong>Age:</strong> ${student.age || 'N/A'}</p>
+                            <p><strong>Email:</strong> ${student.email || 'N/A'}</p>
+                            <p><strong>Joined:</strong> ${joinedDate}</p>
+                            
+                            <h4 style="margin-top: 1.5rem;">Progress by Subject</h4>
+                            <p><strong>Reading:</strong> ${student.readingProgress || 0}%</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${student.readingProgress || 0}%"></div>
+                            </div>
+                            
+                            <p><strong>Math:</strong> ${student.mathProgress || 0}%</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${student.mathProgress || 0}%"></div>
+                            </div>
+                            
+                            <p><strong>Amharic:</strong> ${student.amharicProgress || 0}%</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${student.amharicProgress || 0}%"></div>
+                            </div>
+                            
+                            <p><strong>General Knowledge:</strong> ${student.knowledgeProgress || 0}%</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${student.knowledgeProgress || 0}%"></div>
+                            </div>
+                        `;
+                        
+                        studentModal.style.display = 'flex';
+                    } else {
+                        alert('Student not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading student: ', error);
+                    alert('Error loading student details');
+                });
+        }
+        
+        // Edit student
+        function editStudent(studentId) {
+            db.collection('users').doc(studentId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const student = doc.data();
+                        document.getElementById('edit-student-id').value = studentId;
+                        
+                        // Get student name
+                        const studentName = student.firstName && student.lastName ? 
+                            `${student.firstName} ${student.lastName}` : student.firstName || student.lastName || '';
+                        
+                        document.getElementById('edit-student-name').value = studentName;
+                        document.getElementById('edit-student-age').value = student.age || '';
+                        
+                        editStudentModal.style.display = 'flex';
+                    } else {
+                        alert('Student not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading student: ', error);
+                    alert('Error loading student details');
+                });
+        }
+        
+        // Save student changes
+        function saveStudentChanges() {
+            const studentId = document.getElementById('edit-student-id').value;
+            const studentName = document.getElementById('edit-student-name').value.trim();
+            const studentAge = document.getElementById('edit-student-age').value;
+            
+            if (!studentName) {
+                alert('Please enter a student name');
+                return;
+            }
+            
+            if (!studentAge || studentAge < 5 || studentAge > 12) {
+                alert('Please enter a valid age between 5 and 12');
+                return;
+            }
+            
+            // Split the name into first and last name
+            const nameParts = studentName.split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+            
+            // Update the student in Firestore
+            db.collection('users').doc(studentId).update({
+                firstName: firstName,
+                lastName: lastName,
+                age: parseInt(studentAge)
+            })
+            .then(() => {
+                alert('Student updated successfully!');
+                editStudentModal.style.display = 'none';
+                loadStudents(); // Refresh the student list
+            })
+            .catch(error => {
+                console.error('Error updating student: ', error);
+                alert('Error updating student: ' + error.message);
+            });
+        }
+        
+        // Delete student
+        function deleteStudent(studentId) {
+            if (confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
+                db.collection('users').doc(studentId).delete()
+                    .then(() => {
+                        alert('Student deleted successfully');
+                        loadStudents(); // Refresh the list
+                    })
+                    .catch(error => {
+                        console.error('Error deleting student: ', error);
+                        alert('Error deleting student');
+                    });
+            }
+        }
+        
+        // Load quiz results from Firestore
+        function loadQuizResults(subject) {
+            quizResultsBody.innerHTML = '<tr><td colspan="5">Loading quiz results...</td></tr>';
+            
+            // First get all quiz attempts for the subject
+            db.collection('quizAttempts')
+                .where('subject', '==', subject)
+                .get()
+                .then(querySnapshot => {
+                    quizResultsBody.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        quizResultsBody.innerHTML = '<tr><td colspan="5">No quiz results found for ' + subject + '</td></tr>';
+                        return;
+                    }
+                    
+                    // Create a map of user IDs to user data
+                    const userIds = [];
+                    querySnapshot.forEach(doc => {
+                        const attempt = doc.data();
+                        if (!userIds.includes(attempt.userId)) {
+                            userIds.push(attempt.userId);
+                        }
+                    });
+                    
+                    // Get user data for all users who took the quiz
+                    if (userIds.length === 0) {
+                        quizResultsBody.innerHTML = '<tr><td colspan="5">No quiz results found</td></tr>';
+                        return;
+                    }
+                    
+                    const userPromises = userIds.map(userId => 
+                        db.collection('users').doc(userId).get()
+                    );
+                    
+                    Promise.all(userPromises)
+                        .then(userDocs => {
+                            const usersMap = {};
+                            userDocs.forEach(doc => {
+                                if (doc.exists) {
+                                    usersMap[doc.id] = doc.data();
+                                }
+                            });
+                            
+                            // Now display the quiz results
+                            querySnapshot.forEach(doc => {
+                                const attempt = doc.data();
+                                const user = usersMap[attempt.userId];
+                                
+                                if (user) {
+                                    const tr = document.createElement('tr');
+                                    const userName = user.firstName && user.lastName ? 
+                                        `${user.firstName} ${user.lastName}` : user.firstName || user.lastName || 'Unknown';
+                                    
+                                    const attemptDate = attempt.timestamp ? 
+                                        new Date(attempt.timestamp.seconds * 1000).toLocaleDateString() : 'N/A';
+                                    
+                                    tr.innerHTML = `
+                                        <td>${userName}</td>
+                                        <td>${attempt.quizTitle || 'Unknown Quiz'}</td>
+                                        <td>${attempt.score}/${attempt.totalQuestions}</td>
+                                        <td>${attempt.percentage}%</td>
+                                        <td>${attemptDate}</td>
+                                    `;
+                                    
+                                    quizResultsBody.appendChild(tr);
+                                }
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error loading user data:', error);
+                            quizResultsBody.innerHTML = '<tr><td colspan="5">Error loading quiz results</td></tr>';
+                        });
+                })
+                .catch(error => {
+                    console.error('Error loading quiz results:', error);
+                    quizResultsBody.innerHTML = '<tr><td colspan="5">Error loading quiz results</td></tr>';
+                });
+        }
+        
+        // Load quizzes from Firestore
+        function loadQuizzes(subject) {
+            quizzesBody.innerHTML = '<tr><td colspan="4">Loading quizzes...</td></tr>';
+            
+            db.collection('quizzes')
+                .where('subject', '==', subject)
+                .get()
+                .then(querySnapshot => {
+                    quizzesBody.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        quizzesBody.innerHTML = '<tr><td colspan="4">No quizzes found for ' + subject + '</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const quiz = doc.data();
+                        const tr = document.createElement('tr');
+                        
+                        tr.innerHTML = `
+                            <td>${quiz.title || 'Untitled Quiz'}</td>
+                            <td>${quiz.subject || 'No subject'}</td>
+                            <td>${quiz.questions ? quiz.questions.length : 0}</td>
+                            <td>
+                                <button class="action-btn quiz-btn view-quiz-btn" data-id="${doc.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        `;
+                        
+                        quizzesBody.appendChild(tr);
+                    });
+                    
+                    // Add event listeners to view quiz buttons
+                    document.querySelectorAll('.view-quiz-btn').forEach(btn => {
+                        btn.addEventListener('click', () => viewQuiz(btn.getAttribute('data-id')));
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading quizzes:', error);
+                    quizzesBody.innerHTML = '<tr><td colspan="4">Error loading quizzes</td></tr>';
+                });
+        }
+        
+        // View quiz details
+        function viewQuiz(quizId) {
+            db.collection('quizzes').doc(quizId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const quiz = doc.data();
+                        document.getElementById('modal-quiz-title').textContent = quiz.title || 'Quiz Details';
+                        
+                        let quizHTML = `
+                            <div class="quiz-content">
+                                <p><strong>Subject:</strong> ${quiz.subject || 'Not specified'}</p>
+                                <p><strong>Number of Questions:</strong> ${quiz.questions ? quiz.questions.length : 0}</p>
+                                <hr>
+                        `;
+                        
+                        if (quiz.questions && quiz.questions.length > 0) {
+                            quiz.questions.forEach((question, index) => {
+                                quizHTML += `
+                                    <div class="quiz-question">
+                                        <div class="question-text">${index + 1}. ${question.text}</div>
+                                        <div class="quiz-options">
+                                `;
+                                
+                                // Add options in correct order
+                                const optionKeys = ['a', 'b', 'c', 'd'];
+                                optionKeys.forEach(key => {
+                                    if (question.options[key]) {
+                                        const isCorrect = key === question.correctAnswer;
+                                        quizHTML += `
+                                            <div class="${isCorrect ? 'correct-answer' : ''}">
+                                                ${key.toUpperCase()}) ${question.options[key]} ${isCorrect ? '✓' : ''}
+                                            </div>
+                                        `;
+                                    }
+                                });
+                                
+                                quizHTML += `
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            quizHTML += '<p>No questions available for this quiz.</p>';
+                        }
+                        
+                        quizHTML += '</div>';
+                        document.getElementById('quiz-details').innerHTML = quizHTML;
+                        quizModal.style.display = 'flex';
+                    } else {
+                        alert('Quiz not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading quiz:', error);
+                    alert('Error loading quiz details');
+                });
+        }
+        
+        // Handle logout
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            auth.signOut();
+        });
+    </script>
+</body>
+</html>
