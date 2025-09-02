@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz - BrightMinds</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <style>
+    :root {
+      --primary: #4a6fa5;
+      --secondary: #ff9f1c;
+      --accent: #2ec4b6;
+      --danger: #ff6b6b;
+      --light: #fdfffc;
+      --dark: #011627;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Comic Sans MS', cursive, sans-serif; }
+    body { background-color: #f5f7fa; color: var(--dark); padding: 20px; }
+    .quiz-container { max-width: 800px; margin: 0 auto; background: white; border-radius: 15px; padding: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .quiz-header { text-align: center; margin-bottom: 2rem; }
+    .quiz-title { color: var(--primary); margin-bottom: 0.5rem; }
+    .quiz-subject { color: var(--secondary); font-size: 1.2rem; margin-bottom: 1rem; }
+    .progress-bar-container { width: 100%; background: #e9ecef; border-radius: 10px; height: 20px; }
+    .progress-bar { height: 100%; background: var(--accent); border-radius: 10px; width: 0%; transition: width 0.5s; }
+    .quiz-question { margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 10px; }
+    .question-text { font-size: 1.2rem; margin-bottom: 1rem; font-weight: bold; }
+    .quiz-options { display: flex; flex-direction: column; gap: 0.8rem; }
+    .quiz-option { padding: 1rem; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .quiz-option:hover { background-color: #f0f5ff; border-color: var(--primary); }
+    .quiz-option.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
+    .quiz-option.correct { background-color: var(--accent); color: white; border-color: var(--accent); }
+    .quiz-option.incorrect { background-color: var(--danger); color: white; border-color: var(--danger); }
+    .submit-btn, .back-btn { display: block; width: 100%; padding: 1rem; background-color: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; text-align: center; cursor: pointer; transition: all 0.3s; margin-top: 1.5rem; text-decoration: none; }
+    .submit-btn:hover, .back-btn:hover { background-color: #e68a00; transform: translateY(-2px); }
+    .submit-btn:disabled { background-color: #cccccc; cursor: not-allowed; transform: none; }
+    .quiz-results { margin-top: 2rem; padding: 1.5rem; background: var(--primary); color: white; border-radius: 10px; text-align: center; display: none; }
+    .result-score { font-size: 2rem; margin: 1rem 0; }
+    .result-stars { font-size: 2.2rem; margin-bottom: 1rem; }
+    .loading, .error-message { text-align: center; padding: 2rem; font-size: 1.2rem; }
+    .error-message { color: var(--danger); }
+    #back-to-login { background-color: var(--accent); width: auto; display: inline-block; margin-top: 1rem; }
+    #back-to-login:hover { background-color: #25a99a; }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <div class="quiz-header">
+      <h1 class="quiz-title">BrightMinds Quiz</h1>
+      <div class="quiz-subject" id="quiz-subject">Loading...</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="quiz-progress"></div>
+      </div>
+    </div>
+
+    <div id="quiz-content">
+      <div class="loading">
+        <i class="fas fa-spinner fa-spin"></i> Loading quiz...
+      </div>
+    </div>
+
+    <button id="submit-quiz" class="submit-btn" style="display: none;">Submit Answers</button>
+
+    <div class="quiz-results" id="quiz-results">
+      <h2>Quiz Results</h2>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-stars" id="result-stars"></div>
+      <div class="result-message" id="result-message"></div>
+      <a id="back-to-lessons" href="#" class="back-btn">Back to Lessons</a>
+    </div>
+
+    <div class="error-message" id="error-message" style="display:none;">
+      <p id="error-text"></p>
+      <a href="login.html" id="back-to-login" class="back-btn" style="display:none;">Back to Login</a>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdBKJRf3txDt8LQLgKvL9UNUWV7iHw6Bk",
+      authDomain: "brightminds-learninghub.firebaseapp.com",
+      projectId: "brightminds-learninghub",
+      storageBucket: "brightminds-learninghub.appspot.com",
+      messagingSenderId: "598495988704",
+      appId: "1:598495988704:web:5775a73d65e7380fafb985",
+      measurementId: "G-2Z74X8ZVVJ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let currentQuiz = null;
+    let userAnswers = {};
+    let subject = '';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      subject = urlParams.get('subject') || 'maths';
+      document.getElementById('quiz-subject').textContent = `${subject.charAt(0).toUpperCase() + subject.slice(1)} Quiz`;
+
+      // set back button link
+      setBackButton();
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          loadQuiz();
+        } else {
+          showError("Please log in to take the quiz.");
+        }
+      });
+
+      document.getElementById('submit-quiz').addEventListener('click', submitQuiz);
+    });
+
+    // Dynamic back button
+    function setBackButton() {
+      const backBtn = document.getElementById('back-to-lessons');
+      backBtn.href = `${subject}/${subject}.html`;
+    }
+
+    function loadQuiz() {
+      // Get all questions for the subject
+      db.collection('quizzes')
+        .where('subject', '==', subject)
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            showError("No quiz found for this subject.");
+            // Redirect after 3 seconds
+            setTimeout(() => {
+              window.location.href = `${subject}/${subject}.html`;
+            }, 3000);
+            return;
+          }
+
+          // Collect all questions from all documents for this subject
+          let allQuestions = [];
+          snapshot.forEach(doc => {
+            const quizData = doc.data();
+            if (quizData.questions && Array.isArray(quizData.questions)) {
+              allQuestions = allQuestions.concat(quizData.questions);
+            }
+          });
+
+          if (allQuestions.length === 0) {
+            showError("No questions found for this subject.");
+            setTimeout(() => {
+              window.location.href = `${subject}/${subject}.html`;
+            }, 3000);
+            return;
+          }
+
+          // Select 5 random questions
+          const randomQuestions = getRandomQuestions(allQuestions, 5);
+          
+          // Create a quiz object with the random questions
+          currentQuiz = {
+            id: 'random-' + Date.now(),
+            title: `${subject.charAt(0).toUpperCase() + subject.slice(1)} Final Quiz`,
+            subject: subject,
+            questions: randomQuestions
+          };
+          
+          displayQuiz();
+        })
+        .catch(err => {
+          showError("Error loading quiz. Please try again.");
+          console.error(err);
+          // Redirect after 3 seconds
+          setTimeout(() => {
+            window.location.href = `${subject}/${subject}.html`;
+          }, 3000);
+        });
+    }
+
+    // Function to get random questions from the array
+    function getRandomQuestions(questions, count) {
+      // Create a copy of the questions array to avoid modifying the original
+      const shuffled = [...questions].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    }
+
+    function displayQuiz() {
+      const quizContent = document.getElementById('quiz-content');
+      if (!currentQuiz || !currentQuiz.questions) { 
+        showError("Quiz data is not available."); 
+        return; 
+      }
+      
+      let html = '';
+      currentQuiz.questions.forEach((q, i) => {
+        html += `<div class="quiz-question" data-question-id="${i}">
+            <div class="question-text">${i + 1}. ${q.text}</div>
+            <div class="quiz-options">`;
+        ['a', 'b', 'c', 'd'].forEach(k => {
+          if (q.options[k]) {
+            html += `<div class="quiz-option" data-question="${i}" data-option="${k}">${k.toUpperCase()}) ${q.options[k]}</div>`;
+          }
+        });
+        html += `</div></div>`;
+      });
+      quizContent.innerHTML = html;
+      quizContent.querySelectorAll('.quiz-option').forEach(opt => {
+        opt.addEventListener('click', function () {
+          const qi = this.getAttribute('data-question');
+          const key = this.getAttribute('data-option');
+          quizContent.querySelectorAll(`.quiz-option[data-question="${qi}"]`).forEach(o => o.classList.remove('selected'));
+          this.classList.add('selected');
+          userAnswers[qi] = key;
+          updateProgress();
+        });
+      });
+      document.getElementById('submit-quiz').style.display = 'block';
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const total = currentQuiz.questions.length;
+      const answered = Object.keys(userAnswers).length;
+      document.getElementById('quiz-progress').style.width = `${(answered / total) * 100}%`;
+    }
+
+    function submitQuiz() {
+      if (!currentQuiz) return;
+      const btn = document.getElementById('submit-quiz');
+      btn.disabled = true;
+      let score = 0;
+      currentQuiz.questions.forEach((q, i) => {
+        const ans = userAnswers[i];
+        if (ans === q.correctAnswer) score++;
+        document.querySelectorAll(`.quiz-option[data-question="${i}"]`).forEach(opt => {
+          const k = opt.getAttribute('data-option');
+          if (k === q.correctAnswer) opt.classList.add('correct');
+          else if (k === ans && ans !== q.correctAnswer) opt.classList.add('incorrect');
+          opt.style.pointerEvents = 'none';
+        });
+      });
+      const percent = Math.round((score / currentQuiz.questions.length) * 100);
+      showResults(score, currentQuiz.questions.length, percent);
+      saveQuizResults(score, currentQuiz.questions.length, percent);
+    }
+
+    function showResults(score, total, percent) {
+      document.getElementById('result-score').textContent = `${score} out of ${total} (${percent}%)`;
+      const stars = document.getElementById('result-stars');
+      const msg = document.getElementById('result-message');
+      if (percent >= 90) { stars.textContent = '★★★★★'; msg.textContent = 'Excellent! You mastered this subject!'; }
+      else if (percent >= 70) { stars.textContent = '★★★★☆'; msg.textContent = 'Great job! You have a good understanding.'; }
+      else if (percent >= 50) { stars.textContent = '★★★☆☆'; msg.textContent = 'Good effort! Keep practicing to improve.'; }
+      else { stars.textContent = '★★☆☆☆'; msg.textContent = 'Nice try! Review the material and try again.'; }
+      document.getElementById('quiz-results').style.display = 'block';
+    }
+
+    function saveQuizResults(score, total, percent) {
+      if (!currentUser) return;
+      db.collection('quizAttempts').add({
+        userId: currentUser.uid,
+        quizId: currentQuiz.id,
+        quizTitle: currentQuiz.title,
+        subject: subject,
+        score, totalQuestions: total, percentage: percent,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        return db.collection('users').doc(currentUser.uid).update({
+          [`${subject}Progress`]: percent,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).catch(err => console.error("Error saving quiz results:", err));
+    }
+
+    function showError(message) {
+      document.getElementById('quiz-content').style.display = 'none';
+      document.getElementById('submit-quiz').style.display = 'none';
+      const errorDiv = document.getElementById('error-message');
+      document.getElementById('error-text').textContent = message;
+      if (message.includes("log in")) document.getElementById('back-to-login').style.display = "inline-block";
+      else document.getElementById('back-to-login').style.display = "none";
+      errorDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

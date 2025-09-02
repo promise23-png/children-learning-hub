@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BrightMinds Learning Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 900px;
+            min-height: 550px;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .login-left {
+            flex: 1;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .login-left h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .login-left p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .features-list {
+            list-style: none;
+        }
+        
+        .features-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .features-list i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .login-right {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+            color: #6a11cb;
+            margin-right: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            color: #333;
+        }
+        
+        .back-home {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .back-home a {
+            color: #6a11cb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-home a:hover {
+            text-decoration: underline;
+        }
+        
+        .role-selection {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .role-selection h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .role-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .role-btn {
+            padding: 15px 25px;
+            border: 2px solid #6a11cb;
+            background: white;
+            color: #6a11cb;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 140px;
+        }
+        
+        .role-btn:hover {
+            background: #6a11cb;
+            color: white;
+        }
+        
+        .role-btn.active {
+            background: #6a11cb;
+            color: white;
+        }
+        
+        .auth-forms {
+            display: none;
+        }
+        
+        .auth-forms.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .auth-form h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #6a11cb;
+        }
+        
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .auth-footer a {
+            color: #6a11cb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .auth-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .auth-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .auth-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                max-width: 100%;
+            }
+            
+            .login-left {
+                display: none;
+            }
+            
+            .login-right {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <h1>Welcome to BrightMinds</h1>
+            <p>Interactive learning platform for children aged 5-12. Join thousands of parents who are already using our platform to enhance their children's education.</p>
+            <ul class="features-list">
+                <li><i class="fas fa-check-circle"></i> Personalized learning paths</li>
+                <li><i class="fas fa-check-circle"></i> Adaptive content for each child</li>
+                <li><i class="fas fa-check-circle"></i> Progress tracking and reports</li>
+                <li><i class="fas fa-check-circle"></i> Safe and secure environment</li>
+            </ul>
+        </div>
+        
+        <div class="login-right">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>BrightMinds</h1>
+            </div>
+            
+            <div class="back-home">
+                <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
+            
+            <div class="role-selection" id="role-selection">
+                <h2>Select Your Role</h2>
+                <div class="role-buttons">
+                    <button class="role-btn" data-role="admin">Admin</button>
+                    <button class="role-btn" data-role="child">Child</button>
+                </div>
+            </div>
+            
+            <div class="auth-forms" id="auth-forms">
+                <div id="admin-login-form" class="auth-form">
+                    <h3>Admin Login</h3>
+                    <form id="adminLoginUser">
+                        <div class="form-group">
+                            <label for="admin-email">Email</label>
+                            <input type="email" id="admin-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-password">Password</label>
+                            <input type="password" id="admin-password" required>
+                        </div>
+                        <button type="submit" class="btn-auth">Login</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p><a href="#" id="back-to-role">Back to role selection</a></p>
+                    </div>
+                </div>
+                
+                <div id="child-login-form" class="auth-form">
+                    <h3>Child Login</h3>
+                    <form id="childLoginUser">
+                        <div class="form-group">
+                            <label for="child-login-email">Email</label>
+                            <input type="email" id="child-login-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="child-login-password">Password</label>
+                            <input type="password" id="child-login-password" required>
+                        </div>
+                        <button type="submit" class="btn-auth">Login</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Don't have an account? <a href="#" id="show-child-signup">Sign up here</a></p>
+                        <p><a href="#" id="back-to-role-child">Back to role selection</a></p>
+                    </div>
+                </div>
+                
+                <div id="child-signup-form" class="auth-form">
+                    <h3>Create Child Account</h3>
+                    <form id="childSignupUser">
+                        <div class="form-group">
+                            <label for="first-name">First Name</label>
+                            <input type="text" id="first-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name">Last Name</label>
+                            <input type="text" id="last-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="number" id="age" min="5" max="12" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="child-signup-email">Email</label>
+                            <input type="email" id="child-signup-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="child-signup-password">Password (min 6 characters)</label>
+                            <input type="password" id="child-signup-password" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm Password</label>
+                            <input type="password" id="confirm-password" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn-auth">Create Account</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="#" id="show-child-login">Login here</a></p>
+                        <p><a href="#" id="back-to-role-signup">Back to role selection</a></p>
+                    </div>
+                </div>
+                
+                <div class="auth-message" id="auth-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script>
+        // Firebase configuration and initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdBKJRf3txDt8LQLgKvL9UNUWV7iHw6Bk",
+            authDomain: "brightminds-learninghub.firebaseapp.com",
+            projectId: "brightminds-learninghub",
+            storageBucket: "brightminds-learninghub.appspot.com",
+            messagingSenderId: "598495988704",
+            appId: "1:598495988704:web:5775a73d65e7380fafb985",
+            measurementId: "G-2Z74X8ZVVJ"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Role selection
+        document.querySelectorAll('.role-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+                
+                // Set active state
+                document.querySelectorAll('.role-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Show auth forms
+                document.getElementById('role-selection').style.display = 'none';
+                document.getElementById('auth-forms').classList.add('active');
+                
+                if (role === 'admin') {
+                    document.getElementById('admin-login-form').style.display = 'block';
+                    document.getElementById('child-login-form').style.display = 'none';
+                    document.getElementById('child-signup-form').style.display = 'none';
+                } else {
+                    document.getElementById('admin-login-form').style.display = 'none';
+                    document.getElementById('child-login-form').style.display = 'block';
+                    document.getElementById('child-signup-form').style.display = 'none';
+                }
+                
+                // Store role in localStorage for later use
+                localStorage.setItem('userRole', role);
+            });
+        });
+
+        // Back to role selection
+        document.getElementById('back-to-role').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('auth-forms').classList.remove('active');
+            document.getElementById('role-selection').style.display = 'block';
+        });
+
+        document.getElementById('back-to-role-child').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('auth-forms').classList.remove('active');
+            document.getElementById('role-selection').style.display = 'block';
+        });
+
+        document.getElementById('back-to-role-signup').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('auth-forms').classList.remove('active');
+            document.getElementById('role-selection').style.display = 'block';
+        });
+
+        // Switch between child login and signup
+        document.getElementById('show-child-signup').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('child-login-form').style.display = 'none';
+            document.getElementById('child-signup-form').style.display = 'block';
+        });
+
+        document.getElementById('show-child-login').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('child-signup-form').style.display = 'none';
+            document.getElementById('child-login-form').style.display = 'block';
+        });
+
+        // Admin login form submission
+        document.getElementById('adminLoginUser').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            // Sign in with email and password
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in successfully
+                    showAuthMessage('Login successful! Redirecting to admin dashboard...', 'success');
+                    
+                    // Redirect to admin dashboard after delay
+                    setTimeout(() => {
+                        window.location.href = 'admin/index.html';
+                    }, 1500);
+                })
+                .catch((error) => {
+                    showAuthMessage('Error signing in: ' + error.message, 'error');
+                });
+        });
+
+        // Child login form submission
+        document.getElementById('childLoginUser').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('child-login-email').value;
+            const password = document.getElementById('child-login-password').value;
+            
+            // Sign in with email and password
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in successfully
+                    showAuthMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to home page after delay
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                })
+                .catch((error) => {
+                    showAuthMessage('Error signing in: ' + error.message, 'error');
+                });
+        });
+
+        // Child signup form submission
+        document.getElementById('childSignupUser').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const firstName = document.getElementById('first-name').value;
+            const lastName = document.getElementById('last-name').value;
+            const age = document.getElementById('age').value;
+            const email = document.getElementById('child-signup-email').value;
+            const password = document.getElementById('child-signup-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showAuthMessage('Passwords do not match!', 'error');
+                return;
+            }
+            
+            // Create user with email and password
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed up successfully
+                    const user = userCredential.user;
+                    
+                    // Save additional user data to Firestore
+                    db.collection("users").doc(user.uid).set({
+                        firstName: firstName,
+                        lastName: lastName,
+                        age: age,
+                        email: email,
+                        role: "child",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                    .then(() => {
+                        // Show success message
+                        showAuthMessage('Account created successfully! Redirecting...', 'success');
+                        
+                        // Redirect to home page after delay
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    })
+                    .catch((error) => {
+                        showAuthMessage('Error saving user data: ' + error.message, 'error');
+                    });
+                })
+                .catch((error) => {
+                    showAuthMessage('Error creating account: ' + error.message, 'error');
+                });
+        });
+
+        // Show authentication message
+        function showAuthMessage(message, type) {
+            const messageDiv = document.getElementById('auth-message');
+            messageDiv.textContent = message;
+            messageDiv.className = 'auth-message ' + type;
+            
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = 'auth-message';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
